@@ -1,18 +1,27 @@
 AWSTemplateFormatVersion: '2010-09-09'
+
 Transform: AWS::Serverless-2016-10-31
+
 Description: >
-  Cloud Resume Challenge Backend - DynamoDB, Lambda, and API Gateway
+  Cloud Resume Challenge Backend - Visitor Counter API
 
 Globals:
   Function:
     Timeout: 5
     MemorySize: 128
 
+  Api:
+    Cors:
+      AllowMethods: "'POST,OPTIONS'"
+      AllowHeaders: "'Content-Type'"
+      AllowOrigin: "'*'"
+
+
 Resources:
+
   VisitorCountTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: visitor-count
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: id
@@ -21,29 +30,54 @@ Resources:
         - AttributeName: id
           KeyType: HASH
 
+
   VisitsFunction:
     Type: AWS::Serverless::Function
+
     Properties:
+
       CodeUri: function/
+
       Handler: app.lambda_handler
-      Runtime: python3.9
+
+      Runtime: python3.14
+
       Environment:
         Variables:
           TABLE_NAME: !Ref VisitorCountTable
+
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref VisitorCountTable
+
       Events:
-        ApiEvent:
+
+        VisitorApi:
           Type: Api
           Properties:
             Path: /visitor-count
             Method: post
 
+        VisitorOptions:
+          Type: Api
+          Properties:
+            Path: /visitor-count
+            Method: options
+
+
+
 Outputs:
+
   ApiUrl:
-    Description: "API Gateway endpoint URL for Prod stage for Visitor Count"
+    Description: "API Gateway endpoint URL"
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/visitor-count/"
+
+
   DynamoDBTableName:
-    Description: "Name of the DynamoDB table"
+    Description: "DynamoDB table name"
     Value: !Ref VisitorCountTable
+
+
+  LambdaFunctionName:
+    Description: "Lambda function name"
+    Value: !Ref VisitsFunction
